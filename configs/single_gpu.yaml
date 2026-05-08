@@ -1,0 +1,32 @@
+# Single GPU Training Config
+# Launch: python train.py --config configs/single_gpu.yaml
+
+# --- Infrastructure ---
+output_dir: ./outputs/single_gpu
+seed: 42
+resume: null
+
+# --- Training ---
+num_epochs: 100
+batch_size: 64
+grad_accum_steps: 1
+max_grad_norm: 1.0
+lr: 3e-4
+weight_decay: 0.01
+warmup_steps: 500
+total_steps: 50000
+
+# --- DataLoader ---
+num_workers: 4
+
+# --- Logging & Eval ---
+log_every: 50
+eval_every: 5
+
+# --- AMP ---
+use_amp: true
+amp_dtype: bfloat16   # Use float16 for Volta/Turing GPUs (V100, T4)
+
+# --- Optimization ---
+compile: true          # torch.compile — disable for debugging
+cudnn_benchmark: true

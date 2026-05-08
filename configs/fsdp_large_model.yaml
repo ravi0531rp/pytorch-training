@@ -1,0 +1,39 @@
+# FSDP Large Model Training Config
+# Launch: torchrun --standalone --nproc-per-node=8 train.py --config configs/fsdp_large_model.yaml
+
+# --- Infrastructure ---
+output_dir: ./outputs/fsdp_large
+seed: 42
+resume: null
+
+# --- Training ---
+num_epochs: 50
+batch_size: 4             # Small micro-batch for large models
+grad_accum_steps: 8       # Effective = 4 * 8 * 8 GPUs = 256
+max_grad_norm: 1.0
+lr: 1e-4                  # Lower LR for large models
+weight_decay: 0.1
+warmup_steps: 2000
+total_steps: 100000
+
+# --- DataLoader ---
+num_workers: 4            # Reduce if memory pressure from large model
+
+# --- Logging & Eval ---
+log_every: 10
+eval_every: 2
+
+# --- AMP ---
+use_amp: true
+amp_dtype: bfloat16       # Required for FSDP (no GradScaler needed)
+
+# --- FSDP Settings ---
+sharding_strategy: full_shard        # Options: full_shard | shard_grad_op | hybrid_shard
+activation_checkpointing: true       # Enable for models > 7B
+cpu_offload: false                   # Enable only if still OOM after full_shard + act_ckpt
+compile: false                       # torch.compile + FSDP can have issues; test carefully
+
+# --- Memory Hints ---
+# full_shard + act_ckpt: ~85% memory savings vs DDP fp32
+# If still OOM: set cpu_offload: true (expect 30-50% throughput cost)
+# Monitor with: nvidia-smi --query-gpu=memory.used --format=csv -l 1

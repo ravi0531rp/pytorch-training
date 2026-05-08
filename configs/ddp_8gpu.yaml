@@ -1,0 +1,38 @@
+# DDP 8-GPU Training Config
+# Launch: torchrun --standalone --nproc-per-node=8 train.py --config configs/ddp_8gpu.yaml
+
+# --- Infrastructure ---
+output_dir: ./outputs/ddp_8gpu
+seed: 42
+resume: null
+
+# --- Training ---
+num_epochs: 100
+batch_size: 64            # Per-GPU batch size → effective = 64 * 8 = 512
+grad_accum_steps: 1       # Increase if effective batch needs to be larger
+max_grad_norm: 1.0
+lr: 3e-4
+weight_decay: 0.01
+warmup_steps: 1000        # Scale warmup with world_size
+total_steps: 50000
+
+# --- DataLoader ---
+num_workers: 8            # 8 per GPU for A100 nodes
+
+# --- Logging & Eval ---
+log_every: 50
+eval_every: 5
+
+# --- AMP ---
+use_amp: true
+amp_dtype: bfloat16
+
+# --- DDP Settings ---
+find_unused_parameters: false  # Set true only if model has conditional paths
+compile: true
+
+# --- Notes ---
+# Effective batch size = batch_size * world_size * grad_accum_steps
+# = 64 * 8 * 1 = 512
+# Scale LR linearly if effective batch changes significantly:
+# lr = base_lr * (effective_batch / base_batch)^0.5  (sqrt scaling)
